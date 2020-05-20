@@ -1,0 +1,5 @@
+data/DB-KEGG/
+*.pkl
+tmp/
+*.pyc
+logs/
