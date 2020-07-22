@@ -3,3 +3,6 @@ data/DB-KEGG/
 tmp/
 *.pyc
 logs/
+MGATRx-Perturb.py
+output.txt
+pertub_test.sh

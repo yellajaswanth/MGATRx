@@ -76,6 +76,11 @@ def parse_args():
                         default=1,
                         help='Number of layers in encoder. Default is 1')
 
+    parser.add_argument('--valid-size',
+                        type=float,
+                        default=0.15,
+                        help='Validation set size. Default is 0.15')
+
 
 
     # parser.add_argument('--mlflow-address',

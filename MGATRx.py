@@ -315,7 +315,7 @@ fold_count = 1
 for train_index, test_index in kf.split(data_set[:,[0,1]],data_set[:,2]):
 
     train_data, test_data = data_set[train_index], data_set[test_index]
-    train_data, validation_data = train_test_split(train_data, test_size=0.15, stratify=train_data[:,2])
+    train_data, validation_data = train_test_split(train_data, test_size=args.valid_size, stratify=train_data[:,2])
     print('Train:{} Val:{} Test:{}'.format((train_data.size / data_set.size), (validation_data.size / data_set.size), (test_data.size / data_set.size)))
 
     v_auc, v_aupr, t_auc, t_aupr,results = gcn_train(TRAIN_DATA=train_data, VALID_DATA=validation_data, TEST_DATA=test_data,
