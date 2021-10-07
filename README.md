@@ -8,13 +8,13 @@ In-silico drug repositioning or predicting new indications for approved or late-
 ![image](https://i.ibb.co/kxw78yV/figure.png)
 
 ## Dependencies
-PyTorch
-PyTorch Sparse
-PyTorch Geometric
-Numpy
-Pandas
-Scikit-learn
-Networkx
+* PyTorch
+* PyTorch Sparse
+* PyTorch Geometric
+* Numpy
+* Pandas
+* Scikit-learn
+* Networkx
 
 ## Citation
 
