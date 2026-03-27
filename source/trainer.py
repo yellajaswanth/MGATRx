@@ -13,6 +13,15 @@ from .metrics import aupr_threshold
 
 
 def get_activation(activation: str = 'none') -> nn.Module:
+    """Return the nn.Module activation corresponding to a string name.
+
+    Args:
+        activation: One of 'leaky', 'selu', 'relu', 'tanh', 'sigmoid',
+                    'elu', 'prelu', 'none'.
+
+    Returns:
+        An nn.Module instance, or identity lambda for 'none'.
+    """
     activations = {
         'leaky': nn.LeakyReLU(0.1),
         'selu': nn.SELU(),
@@ -27,7 +36,18 @@ def get_activation(activation: str = 'none') -> nn.Module:
     return lambda x: x
 
 
-def build_model(fea_nums, adj_mats, args, device):
+def build_model(fea_nums: dict, adj_mats: dict, args, device: torch.device):
+    """Instantiate the MGATRx model and Adam optimizer from parsed CLI args.
+
+    Args:
+        fea_nums: Dict mapping node type -> number of nodes.
+        adj_mats: Dict mapping edge type -> [adjacency tensor].
+        args: Parsed argparse namespace.
+        device: Target torch.device.
+
+    Returns:
+        Tuple of (model, optimizer).
+    """
     edge_decoder = {key: (args.decoder, 1) for key in adj_mats}
     num_layers = tuple(args.embed_size for _ in range(args.num_layers))
     if args.decoder != 'linear':
@@ -41,7 +61,22 @@ def build_model(fea_nums, adj_mats, args, device):
     return model, optimizer
 
 
-def calculate_loss(adj_recon, adj_mats, mask, adj_losstype):
+def calculate_loss(adj_recon: dict, adj_mats: dict, mask: dict,
+                   adj_losstype: dict) -> torch.Tensor:
+    """Compute the weighted multi-task reconstruction loss.
+
+    Applies BCE (with positive class reweighting) for drug-disease edges and
+    MSE (after sigmoid activation) for all auxiliary edge types.
+
+    Args:
+        adj_recon: Dict mapping edge type -> [logit tensor].
+        adj_mats: Dict mapping edge type -> [ground truth tensor].
+        mask: Dict mapping edge type -> [binary mask tensor] or [].
+        adj_losstype: Dict mapping edge type -> [(loss_fn str, weight int)].
+
+    Returns:
+        Scalar total loss tensor.
+    """
     total_loss = 0
     for key, item in adj_losstype.items():
         loss_type = item[0][0]
@@ -77,6 +112,31 @@ def train_fold(
     model, optimizer, model_init_state, opt_init_state,
     args, device, fold_num, timestamp
 ):
+    """Train and evaluate the model for a single cross-validation fold.
+
+    Resets model and optimizer to initial states, constructs masked train/val
+    adjacency matrices, then runs the epoch loop with early stopping
+    (patience=50 validation checks, evaluated every 25 epochs).
+
+    Args:
+        train_data: Array of shape (N_train, 3) with (drug, disease, label).
+        valid_data: Array of shape (N_val, 3) with (drug, disease, label).
+        test_data: Array of shape (N_test, 3) with (drug, disease, label).
+        adj_mats: Full heterogeneous adjacency dict.
+        fea_mats: Node feature dict (already on device).
+        adj_losstype: Loss type/weight specification dict.
+        model: MGATRx model instance.
+        optimizer: Optimizer instance.
+        model_init_state: model.state_dict() at initialization.
+        opt_init_state: optimizer.state_dict() at initialization.
+        args: Parsed argparse namespace.
+        device: Target torch.device.
+        fold_num: Current fold index (for logging).
+        timestamp: Run timestamp string (for log file names).
+
+    Returns:
+        Tuple (best_valid_auc, best_valid_aupr, test_auc, test_aupr, best_adj_recon).
+    """
     model.load_state_dict(model_init_state)
     optimizer.load_state_dict(opt_init_state)
 

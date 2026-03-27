@@ -3,11 +3,16 @@ import pandas as pd
 from sklearn.metrics import accuracy_score, roc_auc_score, hamming_loss, auc, roc_curve, precision_recall_curve, \
     precision_score, recall_score, f1_score, mean_squared_error, average_precision_score
 
-def get_indexes(y):
-	indexes = []
-	for r in y:
-		indexes.append(np.where(r == 1)[0].tolist())
-	return indexes
+def get_indexes(y: np.ndarray) -> list:
+    """Return column indices of positive (==1) entries for each row.
+
+    Args:
+        y: 2-D binary array of shape (n_samples, n_labels).
+
+    Returns:
+        List of lists, each containing indices of positive labels per row.
+    """
+    return [np.where(r == 1)[0].tolist() for r in y]
 
 
 def apk(actual, predicted, k=10):
@@ -101,7 +106,16 @@ def optimal_cutoff(y_true, y_predicted):
 
     return roc_t['threshold'].values[0]
 
-def auc_prc_multilabel(y_true, y_pred):
+def auc_prc_multilabel(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+    """Compute micro-averaged area under the precision-recall curve.
+
+    Args:
+        y_true: Ground-truth binary label array.
+        y_pred: Predicted score array (same shape as y_true).
+
+    Returns:
+        Micro-averaged AUPR as a float; 0.0 if the curve is degenerate.
+    """
     precision_micro, recall_micro, _ = precision_recall_curve(y_true.ravel(), y_pred.ravel())
     try:
         prc_auc_micro = auc(recall_micro, precision_micro)
@@ -109,7 +123,18 @@ def auc_prc_multilabel(y_true, y_pred):
         return 0.0
     return prc_auc_micro
 
-def aupr_threshold(precision, recall, pr_thresholds):
+def aupr_threshold(precision: np.ndarray, recall: np.ndarray,
+                   pr_thresholds: np.ndarray) -> float:
+    """Select the decision threshold that maximises F1 on the PR curve.
+
+    Args:
+        precision: Precision values from precision_recall_curve.
+        recall: Recall values from precision_recall_curve.
+        pr_thresholds: Threshold values from precision_recall_curve.
+
+    Returns:
+        Threshold value (float) corresponding to the peak F1 score.
+    """
     all_F_measure = np.zeros(len(pr_thresholds))
     for k in range(0, len(pr_thresholds)):
         if (precision[k] + precision[k]) > 0:
@@ -120,7 +145,19 @@ def aupr_threshold(precision, recall, pr_thresholds):
     threshold = pr_thresholds[max_index]
     return threshold
 
-def model_eval(predicted_labels, true_labels):
+def model_eval(predicted_labels: np.ndarray, true_labels: np.ndarray) -> dict:
+    """Evaluate model predictions and return a dict of ranking/classification metrics.
+
+    Computes AUC-ROC, AUPR, micro-F1, and MSE. The decision threshold is chosen
+    by maximising F1 on the precision-recall curve.
+
+    Args:
+        predicted_labels: Raw prediction scores (any shape; ravelled internally).
+        true_labels: Ground-truth binary labels (same shape).
+
+    Returns:
+        Dict with keys 'aupr', 'auc', 'f1_micro', 'mse'.
+    """
     true_labels = true_labels.ravel()
     predicted_labels = np.nan_to_num(predicted_labels.ravel())
 
@@ -173,7 +210,16 @@ def model_eval(predicted_labels, true_labels):
     # result_eval['map50'] = map50
     return result_eval
 
-def calculate_auc(predicted_labels, true_labels):
+def calculate_auc(predicted_labels: np.ndarray, true_labels: np.ndarray) -> float:
+    """Compute the area under the ROC curve.
+
+    Args:
+        predicted_labels: Predicted scores (ravelled).
+        true_labels: Ground-truth binary labels (ravelled).
+
+    Returns:
+        AUC-ROC score as a float.
+    """
     true_labels = true_labels.ravel()
     predicted_labels = np.nan_to_num(predicted_labels.ravel())
 
