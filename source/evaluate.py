@@ -1,0 +1,42 @@
+import numpy as np
+import pandas as pd
+
+from sklearn.metrics import average_precision_score, roc_curve, auc, f1_score, precision_recall_curve
+
+from .metrics import aupr_threshold
+
+
+def aggregate_fold_predictions(test_results_fold, test_set_fold, num_folds, fold_test):
+    y_real = []
+    y_proba = []
+    for i in range(num_folds):
+        predictions = test_results_fold[i][(0, 1)][0].sigmoid().numpy()
+        y_true = [row[2] for row in test_set_fold[i]]
+        y_score = [predictions[row[0], row[1]] for row in test_set_fold[i]]
+        y_real.append(y_true)
+        y_proba.append(y_score)
+        if fold_test:
+            break
+    return np.concatenate(y_real), np.concatenate(y_proba)
+
+
+def compute_and_log_metrics(y_real, y_proba, args, timestamp):
+    precision, recall, pr_thresholds = precision_recall_curve(y_real, y_proba, pos_label=1)
+    ap = average_precision_score(y_real, y_proba)
+    threshold = aupr_threshold(precision, recall, pr_thresholds)
+
+    fpr, tpr, _ = roc_curve(y_real, y_proba)
+    aucroc = auc(fpr, tpr)
+    print('Average Precision:{}, AUC:{}'.format(ap, aucroc))
+
+    predicted_score = np.copy(y_proba)
+    predicted_score[predicted_score > threshold] = 1
+    predicted_score[predicted_score <= threshold] = 0
+    f1_micro = f1_score(y_real, predicted_score, average='micro')
+
+    rows = [['AUPR', ap], ['AUC', aucroc], ['F1', f1_micro]]
+    for arg in vars(args):
+        rows.append([arg, getattr(args, arg)])
+
+    pd.DataFrame(rows, columns=['Attribute', 'Value']).to_csv(
+        'logs/MGATRx_{}.log'.format(timestamp), sep='\t', index=False)
