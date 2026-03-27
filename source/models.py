@@ -1,4 +1,7 @@
-from .layers import *
+import torch
+import torch.nn as nn
+
+from .layers import GraphConvolution, CosineGraphAttentionLayer, DictReLU, DictDropout
 from .utils import issymmetric, to_sparse, to_dense, normalize
 
 class MGATRx(nn.Module):
