@@ -100,7 +100,7 @@ def optimal_cutoff(y_true, y_predicted):
     fpr, tpr, threshold = roc_curve(y_true, y_predicted)
     i = np.arange(len(tpr))
     roc = pd.DataFrame({'tf': pd.Series(tpr - (1 - fpr), index=i), 'threshold': pd.Series(threshold, index=i)})
-    roc_t = roc.ix[(roc.tf - 0).abs().argsort()[:1]]
+    roc_t = roc.loc[(roc.tf - 0).abs().argsort()[:1]]
 
     return roc_t['threshold'].values[0]
 
@@ -143,7 +143,7 @@ def model_eval(predicted_labels, true_labels):
     predicted_score[predicted_score <= threshold] = 0
 
 
-    f1_micro=f1_score(true_labels,predicted_score, 'micro')
+    f1_micro=f1_score(true_labels, predicted_score, average='micro')
     mse = mean_squared_error(true_labels, predicted_score)
     # f1_macro = f1_score(true_labels, predicted_score, 'macro')
     # f1_weigted = f1_score(true_labels, predicted_score, 'weighted')

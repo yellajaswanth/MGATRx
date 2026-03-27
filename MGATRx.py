@@ -1,4 +1,9 @@
+import time
+import os
+import pickle
+
 import numpy as np
+import pandas as pd
 from sklearn.model_selection import StratifiedKFold, train_test_split
 
 import warnings
@@ -47,7 +52,7 @@ if torch.cuda.is_available():
     torch.cuda.empty_cache()  # entirely clear cache in GPU
     print('Memory Usage:')
     print('Allocated:', round(torch.cuda.memory_allocated(0) / 1024 ** 3, 1), 'GB')
-    print('Cached:   ', round(torch.cuda.memory_cached(0) / 1024 ** 3, 1), 'GB')
+    print('Cached:   ', round(torch.cuda.memory_reserved(0) / 1024 ** 3, 1), 'GB')
     # for key, item in adj_mats.items():
     #     adj_mats[key] = [adj_mats[key][0].to(device)]
 
@@ -68,7 +73,7 @@ def get_activation(activation='none'):
     elif activation =='relu':
         return torch.nn.ReLU()
     elif activation == 'tanh':
-        return torch.nn.tanh()
+        return torch.nn.Tanh()
     elif activation == 'sigmoid':
         return torch.nn.Sigmoid()
     elif activation == 'elu':
@@ -380,7 +385,7 @@ predicted_score = np.copy(y_proba)
 predicted_score[predicted_score > threshold] = 1
 predicted_score[predicted_score <= threshold] = 0
 
-f1_micro=f1_score(y_real,predicted_score, 'micro')
+f1_micro=f1_score(y_real, predicted_score, average='micro')
 
 
 rows = []
