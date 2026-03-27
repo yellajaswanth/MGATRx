@@ -68,7 +68,7 @@ class CosineGraphAttentionLayer(nn.Module):
         # neighborhood masking (inspired by this repo:
         # https://github.com/danielegrattarola/keras-gat)
         if isinstance(adj, (float, int)):
-            adj = torch.eye(xi.shape[0]).cuda()
+            adj = torch.eye(xi.shape[0], device=xi.device)
         else:
             adj = to_dense(adj)
         mask = (1. - to_dense(adj)) * -1e9
