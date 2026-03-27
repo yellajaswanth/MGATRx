@@ -1,18 +1,15 @@
 import math
-
-import torch
-
-from torch.nn.parameter import Parameter
-from torch.nn.modules.module import Module
-import numpy as np
-import torch.nn.functional as F
-import random
-from torch import nn
-from .utils import normalize, to_dense, to_sparse,sparse_to_tensor
 import time
 import pickle
-from torch_geometric.utils import softmax
-from torch_sparse import spmm
+
+import torch
+import numpy as np
+import torch.nn.functional as F
+from torch import nn
+from torch.nn.parameter import Parameter
+from torch.nn.modules.module import Module
+
+from .utils import normalize, to_dense, to_sparse, sparse_to_tensor
 
 
 class GraphConvolution(nn.Module):
@@ -88,7 +85,7 @@ class CosineGraphAttentionLayer(nn.Module):
     def save_attention(self, P):
         if self.epoch_count % 25 == 0:
             print('Saving Attention for {}{}'.format(P.shape[0],P.shape[1]))
-            save_file = 'tmp/GCNRx_attention_weight_{}_{}_{}'.format(self.timestamp,P.shape[0],P.shape[1]) + '.pkl'
+            save_file = 'tmp/MGATRx_attention_weight_{}_{}_{}'.format(self.timestamp,P.shape[0],P.shape[1]) + '.pkl'
             with open(save_file, 'wb') as f:
                 pickle.dump([P.cpu().detach().numpy(), self.beta.cpu().detach().numpy()], f)
 

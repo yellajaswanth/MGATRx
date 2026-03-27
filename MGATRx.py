@@ -12,10 +12,12 @@ from tqdm import tqdm
 import torch
 import torch.optim as optim
 
-from source.metrics import *
-from source.utils import *
+from sklearn.metrics import roc_auc_score, average_precision_score, precision_recall_curve, roc_curve, auc, f1_score
+
+from source.metrics import aupr_threshold
+from source.utils import load_drugbank_data, normalize, to_dense
 from source.argparser import parse_args
-from source.models import *
+from source.models import MGATRx
 import copy
 
 
@@ -36,15 +38,6 @@ print(args)
 ##############################
 
 adj_mats, fea_mats, fea_nums, adj_losstype = load_drugbank_data()
-# adj_mats, fea_mats, fea_nums, adj_losstype = load_orpha_data()
-# adj_losstype = {
-#             (0, 1): [('BCE', 1)],
-#             (0, 2): [('MSE', 0)],
-#             (0, 3): [('MSE', 0)],
-#             (0, 4): [('MSE', 0)],
-#             (0, 5): [('MSE', 0)],
-#             (1, 2): [('MSE', 0)]
-#         }
 tasks = [task for task, loss in adj_losstype.items() if loss[0][1] > 0]
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -53,8 +46,6 @@ if torch.cuda.is_available():
     print('Memory Usage:')
     print('Allocated:', round(torch.cuda.memory_allocated(0) / 1024 ** 3, 1), 'GB')
     print('Cached:   ', round(torch.cuda.memory_reserved(0) / 1024 ** 3, 1), 'GB')
-    # for key, item in adj_mats.items():
-    #     adj_mats[key] = [adj_mats[key][0].to(device)]
 
     for key, item in fea_mats.items():
         fea_mats[key] = fea_mats[key].to(device)
@@ -88,11 +79,6 @@ def load_model():
     encoder = args.encoder
     decoder = args.decoder
     for i, item in adj_mats.items(): edge_decoder[i] = (decoder,1)
-    # for task in tasks: edge_decoder[task] = ('dismult',1)
-    # count_dict = {}
-    # for x, y in adj_mats.keys():
-    #     count_dict[x] = count_dict.get(x, 0) + 1
-    #     count_dict[y] = count_dict.get(y, 0) + 1
     num_layers = tuple([args.embed_size for layer in range(args.num_layers)])
     if decoder == 'linear':
         enc_activation = get_activation(args.encoder_activation)
@@ -213,10 +199,6 @@ def gcn_train(TRAIN_DATA,VALID_DATA, TEST_DATA, adj_mats, NUM_EPOCHS, FOLD_NUM):
         loss_train.backward()
         optimizer.step()
 
-        # earlystopper(val_loss=loss_val, model=model, criteria='loss')
-        # if earlystopper.early_stop: break
-
-
         counter +=1
         if epoch % 25 == 0:
             print('\nEpoch:{}, Loss:{}'.format(epoch, loss_train))
@@ -242,7 +224,6 @@ def gcn_train(TRAIN_DATA,VALID_DATA, TEST_DATA, adj_mats, NUM_EPOCHS, FOLD_NUM):
                 best_adj_recon = {}
                 for key in adj_recon:
                     best_adj_recon[key] = [adj_recon[key][0].clone().detach()]
-                # best_epoch = epoch
                 pred_list = []
                 ground_truth = []
                 for ele in TEST_DATA:
@@ -256,7 +237,7 @@ def gcn_train(TRAIN_DATA,VALID_DATA, TEST_DATA, adj_mats, NUM_EPOCHS, FOLD_NUM):
             print('\nValid AUC: {:.4f} Valid AUPR: {:.4f} Test AUC: {:.4f} Test AUPR: {:.4f}'.format(valid_auc, valid_aupr, test_auc, test_aupr))
         pbar.set_description('Fold-{} loss_train:{:.4f} loss_val:{:.4f}'.format(FOLD_NUM, loss_train, loss_val))
         if counter > 50: break
-        pd.DataFrame(epoch_vs_aupr, columns=['Epoch','AUPR']).to_csv('logs/epoch_plots/GCNRx_EpochvsAUPR_fold{}_{}_{}.txt'.format(FOLD_NUM,args.encoder_activation, timestamp), sep='\t')
+        pd.DataFrame(epoch_vs_aupr, columns=['Epoch','AUPR']).to_csv('logs/epoch_plots/MGATRx_EpochvsAUPR_fold{}_{}_{}.txt'.format(FOLD_NUM,args.encoder_activation, timestamp), sep='\t')
     return best_valid_auc, best_valid_aupr, test_auc, test_aupr, best_adj_recon
 
 
@@ -332,7 +313,7 @@ for train_index, test_index in kf.split(data_set[:,[0,1]],data_set[:,2]):
     test_aupr_fold.append(t_aupr)
 
     if args.save_model:
-        save_file = 'tmp/GCNRx_' + args.encoder + '_' + args.decoder + '_' + str(timestamp) + '_'+ str(fold_count)+ '.pkl'
+        save_file = 'tmp/MGATRx_' + args.encoder + '_' + args.decoder + '_' + str(timestamp) + '_'+ str(fold_count)+ '.pkl'
         with open(save_file, 'wb') as f:
             pickle.dump([results, test_data], f)
 
@@ -346,7 +327,7 @@ for train_index, test_index in kf.split(data_set[:,[0,1]],data_set[:,2]):
 
 
 if args.save_model:
-    save_file = 'tmp/GCNRx_' + args.encoder+'_'+ args.decoder+ '_'+str(timestamp)+ '.pkl'
+    save_file = 'tmp/MGATRx_' + args.encoder+'_'+ args.decoder+ '_'+str(timestamp)+ '.pkl'
 
     with open(save_file, 'wb') as f:
         pickle.dump([test_results_fold, test_set_fold], f)
@@ -395,7 +376,7 @@ rows.append(['F1',f1_micro])
 for arg in vars(args):
     rows.append([arg, getattr(args, arg)])
 
-pd.DataFrame(rows, columns=['Attribute','Value']).to_csv('logs/GCNRx_{}.log'.format(timestamp), sep='\t', index=False)
+pd.DataFrame(rows, columns=['Attribute','Value']).to_csv('logs/MGATRx_{}.log'.format(timestamp), sep='\t', index=False)
 
 
 
