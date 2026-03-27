@@ -8,33 +8,56 @@ In-silico drug repositioning or predicting new indications for approved or late-
 ![image](https://i.ibb.co/kxw78yV/figure.png)
 
 ## Dependencies
-* PyTorch
-* PyTorch Sparse
-* PyTorch Geometric
-* Numpy
-* Pandas
-* Scikit-learn
-* Networkx
+
+Install dependencies via pip:
+
+```bash
+pip install -r requirements.txt
+```
+
+> **Note:** `torch`, `torch-sparse`, and `torch-geometric` require matching CUDA versions.
+> See the [PyTorch install guide](https://pytorch.org/get-started/locally/) and
+> [PyG install guide](https://pytorch-geometric.readthedocs.io/en/latest/install/installation.html)
+> for platform-specific instructions.
+
+| Package | Min Version |
+|---|---|
+| torch | 1.9.0 |
+| torch-sparse | 0.6.12 |
+| torch-geometric | 2.0.0 |
+| numpy | 1.21.0 |
+| pandas | 1.3.0 |
+| scikit-learn | 0.24.2 |
+| networkx | 2.6.0 |
+| tqdm | 4.62.0 |
+| scipy | 1.7.0 |
+
+## Data Setup
+
+Unzip the dataset archive before running:
+
+```bash
+unzip data/DB-KEGG.zip -d data/
+```
+
+This creates `data/DB-KEGG/` with the required input files.
 
 ## Citation
 
 To cite this [paper](https://doi.ieeecomputersociety.org/10.1109/TCBB.2021.3082466), please use this bibtex entry:
 
 ```BibTeX
-@ARTICLE {9437764,
-author = {J. Yella and A. Jegga},
-journal = {IEEE/ACM Transactions on Computational Biology and Bioinformatics},
-title = {MGATRx: Discovering Drug Repositioning Candidates Using Multi-view Graph Attention},
-year = {5555},
-volume = {},
-number = {01},
-issn = {1557-9964},
-pages = {1-1},
-keywords = {drugs;diseases;annotations;graph neural networks;bioinformatics;mathematical model;feature extraction},
-doi = {10.1109/TCBB.2021.3082466},
-publisher = {IEEE Computer Society},
-address = {Los Alamitos, CA, USA},
-month = {may}
+@ARTICLE{9437764,
+  author  = {Yella, Jaswanth K. and Jegga, Anil G.},
+  journal = {IEEE/ACM Transactions on Computational Biology and Bioinformatics},
+  title   = {MGATRx: Discovering Drug Repositioning Candidates Using Multi-view Graph Attention},
+  year    = {2021},
+  volume  = {19},
+  number  = {4},
+  pages   = {2608--2618},
+  doi     = {10.1109/TCBB.2021.3082466},
+  issn    = {1557-9964},
+  month   = {may}
 }
 ```
 
